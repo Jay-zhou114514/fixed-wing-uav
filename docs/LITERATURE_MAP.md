@@ -71,6 +71,35 @@ AAAI/AIAA/IEEE 会议层是会议论文的现实目标。
 | 风感知的围栏/缓冲区膨胀 | 2020 已发表，仍在延续 | 见 3.2 |
 | "可认证安全规划"作为框架 | 已被综述占据 | 见 3.4 |
 | 固定翼 + RL + 风场安全 | 2026 正在被做 | 见 3.5 |
+| **"解析定义安全缓冲并证明其充分性"（方法层）** | **已被占据（航空冲突探测领域，定理级成果）** | 见 3.6 |
+| **"固定翼不能紧急停住"作为动机** | **已被占据** | 见 3.6 |
+| **围栏违规预测 + 安全机动选择的形式化验证** | **已被占据（2021，且已飞行试验）** | 见 3.6 |
+
+## 3.6 潜力评估新增的相邻传统（2026-09-17，见 `POTENTIAL_ASSESSMENT.md`）
+
+做潜力评估时发现两条**方法层与动机层**已被占据，必须正面处理：
+
+| 文献 | 年 | 被引 | 占据了什么 |
+| --- | --- | --- | --- |
+| Herencia-Zapana et al., Formal verification of safety buffers for state-based conflict detection and resolution | 2010 | 11 | 用机械定理证明器形式化证明安全缓冲 |
+| **Narkawicz et al., Formal verification of lateral and temporal safety buffers** | 2013 | 5 | 摘要原文："safety buffers are given that **guarantee mathematically** that the probability of a missed alert is zero"，"**formally proven using a mechanical theorem prover**" |
+| **Kouskoulas et al., Good Fences Make Good Neighbors** | 2021 | 2 | **围栏**违规预测 + 安全机动选择的**形式化验证**算法；高阶动力学（线性变化向心加速度）；含模型参数不确定性；**已飞行试验**。且**同用"固定翼不能急停"动机** |
+| Dill et al., SAFEGUARD: An assured safety net technology for UAS | 2016 | **52** | 系统级"保证安全网"（含 stay-in/stay-out 区域），V&V 导向 |
+| D'Souza et al., Feasibility of varying geo-fence ... vehicle performance and wind | 2016 | **32** | 本方向源头：按性能与风算 keep-in 围栏尺寸 |
+
+**对本项目的含义**：
+
+1. **"验证缓冲充分性"不是新方法**——该传统在冲突探测领域已成定理级成果。
+   本项目是**该方法在围栏具体构造上的应用**。
+2. **"固定翼不能急停"不能作为新颖性来源**——已被多次使用。
+3. **仍然未被占据的**：该特定构造（JAIS δu ⊕ δd）的**裕度方向结构**与**精确紧性**
+   （检索：裕度/紧性 0 命中；方向依赖 1 命中且不相关；JAIS 13 条施引无一涉及）。
+4. **同源活跃线（抢先风险）**：
+   `D'Souza 2016 → JAIS 2020 (Stevens & Atkins) → {Stevens 2021, Kim 2021, Kim 2022, Abdul 2026}`
+   —— 该线持续发表但 6 年内未做该构造的充分性验证。风险中等偏低，但存在。
+
+**参考**：该方向确切交叉点（`"fixed-wing" AND geofence`）仅 **9 篇**论文；
+核心论文 JAIS 2020 年均被引约 **2 次**。属冷门小众，非热点。
 
 ## 5. 观察到的异常（标注置信度）
 

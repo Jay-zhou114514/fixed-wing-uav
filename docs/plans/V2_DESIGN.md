@@ -170,14 +170,27 @@ EXP-27 现在给出了**第二件**，而且它解释了两件事：
    给出经验形式 `s_t = V·t_c`（`t_c` 由滚转响应 rise time 定），并作为保守性旋钮。
    **本项目与它的差异**：它是经验标定（"must be tailored for each vehicle"）、
    **不含风**、且**正比于空速**；本构造下的是精确闭式、含风、**与空速无关**。
-2. **不得**声称首次研究风下围栏（JAIS 2018/2020 已占）
+2. **不得**声称"用解析方法定义安全缓冲并证明其充分性"是方法创新。
+   **该方法是航空冲突探测领域的成熟成果**：
+   Narkawicz et al. (2013) 摘要原文即"buffers ... **guarantee mathematically** that the
+   probability of a missed alert is zero"，且结果"**formally proven using a mechanical
+   theorem prover**"；Herencia-Zapana et al. (2010) 为先驱。
+   **本项目是该方法在围栏具体构造上的应用**，不是方法本身。
+3. **不得**以"固定翼不能紧急停住"作为新颖性来源。
+   Kouskoulas et al. (2021) 摘要原文已用该动机：
+   "fast-moving aerial vehicles, such as fixed-wing aircraft, that **cannot be brought to a
+   stop in an emergency**"；Thomas & Sarhadi (2024) 亦以 transient dynamics 处理同一问题。
+4. **不得**声称首次研究风下围栏（JAIS 2018/2020 已占）
    或风下 Dubins 最优路径（`LITERATURE_MAP` 第 3.1 节链条已解决）。
-3. **不得**声称 JAIS 2020 有误。事实立场是"其充分性此前未被验证"，
+5. **不得**声称 JAIS 2020 有误。事实立场是"其充分性此前未被验证"，
    且 EXP-27 的独立检验**支持其充分性**（凸多边形情形）。
-4. **不得**声称"初步发现该构造过于保守"——恰恰相反，它**零冗余**。
-5. **不得**把凹多边形结论提前写出（EXP-27B 未做）。
-6. **不得**把等级 C 内容（失效侧候选形式、"零冗余导致任务层后果"的解释）
+6. **不得**声称"初步发现该构造过于保守"——恰恰相反，它**零冗余**。
+7. **不得**把凹多边形结论提前写出（EXP-27B 未做）。
+8. **不得**把等级 C 内容（失效侧候选形式、"零冗余导致任务层后果"的解释）
    写入摘要或结论。
+9. **注意**：仅陈述"恰好紧"有被判**平凡**的风险（因为 δu 的定义就是 R）。
+   论文必须把"**对所有风速比 w 成立**"（即风不改变垂直方向穿透量）作为核心陈述。
+   详见 `docs/POTENTIAL_ASSESSMENT.md` 第 5.2 节。
 
 ### 5.3 一句话版本
 
