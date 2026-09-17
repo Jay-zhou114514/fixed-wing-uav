@@ -5,6 +5,42 @@
 下一步实验：**EXP-FW-V1-27A**（多边同时约束复核）——EXP-26 的硬前置
 主实验：**EXP-FW-V1-26**（方向依赖延迟预算，闭环）
 
+## 进度快照（2026-09-17 晚，下次从这里继续）
+
+**本轮完成的全部工作（对应提交 `31e83ac` 及之前 8 个提交）**
+
+| # | 工作 | 产出 |
+| --- | --- | --- |
+| 1 | 四条决策链文献审计 | `docs/LITERATURE_AUDIT_2026-09.md`（含 1 次已更正断言） |
+| 2 | 潜力评估（是否已被研究透） | `docs/POTENTIAL_ASSESSMENT.md`（含方法层/动机层已被占的发现） |
+| 3 | 立项理由判定（读 JAIS 2020 全文含第 III 节） | `docs/LITERATURE_AUDIT_V2.md`（Phase B 门禁：**未通过**，阻塞项 Kim 2022） |
+| 4 | **EXP-FW-V1-27 完成** | 裕度方向结构：沿风 δu、垂直 0（精确紧）；等级 **A** |
+| 5 | V2.0 设计 | `docs/plans/V2_DESIGN.md`（被冻结文件取代） |
+| 6 | **V2.1 研究问题冻结（已批准）** | `docs/plans/RESEARCH_QUESTION_FREEZE_V2.1.md` |
+| 7 | **研究计划 v1.3（已发布）** | `docs/plans/RESEARCH_PLAN_v1.3.md` |
+| 8 | 平台与规范 | `docs/FROZEN_PROTOCOL.md`、`docs/AI_USE_DISCLOSURE.md`、`docs/plans/README.md` |
+
+**当前文件层级（冲突时的裁决顺序）**
+
+```text
+RESEARCH_QUESTION_FREEZE_V2.1.md   ← 研究问题与 claim 边界（最高）
+        ↓ 不得冲突
+RESEARCH_PLAN_v1.3.md              ← 执行计划
+        ↓ 背景材料（已被取代）
+V2_DESIGN.md / POTENTIAL_ASSESSMENT.md / LITERATURE_AUDIT_V2.md
+```
+
+**下一步唯一动作**：写 `EXP-FW-V1-27A` 的**预注册**（纯几何复核
+"逐边独立 ⇒ 同时满足"这一步），然后实现脚本。
+
+**分支状态**：全部工作位于 `audit/literature-decision-chains`（已推送）；
+**`main` 尚未合并**（停在 `c7646ac`，即本轮开始前的状态）。是否合入 main 待负责人决定。
+
+**环境备注**：
+- GitHub 需走代理 `http://127.0.0.1:12334`（本机 GitHub 域名被解析到 127.0.0.1）；
+- Scopus API key 存于工作区 `tools/scopus.sh`；
+- OpenAlex 每日额度已用尽（次日 UTC 0 点重置）。
+
 ## 负责人决定（2026-09-17，已生效）
 
 | 项 | 决定 |
