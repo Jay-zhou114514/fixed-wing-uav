@@ -342,7 +342,57 @@ TITLE-ABS-KEY(wind AND geofence AND (delay OR "reaction" OR "rise time" OR "budg
 
 ---
 
-## 8. 对项目定位的影响（回答你的问题）
+## 8. Phase B 门禁自检（按 `research-stack-router`，2026-09-17 补）
+
+`docs/LITERATURE_MAP.md` 第 109 行已引用 `research-stack-router` 的 Phase B 门槛，
+但该技能此前未安装。现已安装（`~/.zcode/skills/research-stack-router`），
+按其实质条款对本审计做自检：
+
+### 8.1 Phase B Gate 逐条
+
+| 门禁条款 | 本审计的符合情况 |
+| --- | --- |
+| "Separate established evidence, interpretation, and open questions" | ✅ 第 7 节三层分列；第 5.2 节区分"可写/必须同时写" |
+| "Do not claim novelty from a small or unverified search" | ✅ 第 5.3 节全部为"不可主张"清单；第 3 节明确 Kim 2022 未读 |
+
+### 8.2 §6 Universal evidence rule 逐条
+
+| 禁止项 | 本审计 |
+| --- | --- |
+| 未读论文却称 "paper reports" | ✅ JAIS 2020 与 Thomas 2024 均为**全文**；其余标注为摘要级 |
+| 无文献基础却称 "novel" | ✅ 未作任何新颖性主张 |
+| 只有仿真却称 "validated" | ✅ 第 7 节 Limitation 已列明 |
+
+### 8.3 尚缺的证据（Phase B 未通过）
+
+**Phase B 门禁当前状态：未通过。** 唯一阻塞项：
+
+> **Kim et al. 2022（`10.1109/DASC55683.2022.9925807`）全文未获取**
+> （Unpaywall 确认 `is_oa: false`，IEEE 付费）。
+
+在读到它之前，本项目的"缺口"陈述只能限定为
+"**未在该构造下被验证**"，不得扩展为"风下缓冲充分性无人验证"。
+
+### 8.4 research-state 七件套与本仓库的映射
+
+`research-state` 要求维护 7 个工件。本仓库已有对应物，映射如下：
+
+| research-state 要求 | 本仓库对应 | 状态 |
+| --- | --- | --- |
+| `PLAN.md` | `docs/plans/RESEARCH_PLAN_v1.x.md` | ✅ |
+| `LITERATURE.md` | `docs/LITERATURE_MAP.md` + `docs/LITERATURE_AUDIT*.md` | ✅ |
+| `EXPERIMENTS.md` | `experiments/README.md`（注册表） | ✅ |
+| `RESULTS.md` | `experiments/EXP-FW-V1-*.md` + `outputs/*.csv` | ✅ |
+| `DECISIONS.md` | `docs/DECISIONS.md`（FW-D-00X） | ✅ |
+| `LIMITATIONS.md` | 分散在各计划与实验记录的 Limitation 节 | 🔶 建议汇总为单文件 |
+| `PROVENANCE.md` | `docs/CONVENTIONS.md` 第 12 节数值互验要求 | 🔶 建议独立成文件 |
+
+**建议（非指令）**：`LIMITATIONS.md` 与 `PROVENANCE.md` 目前分散，
+按 `research-state` 的要求聚合成单文件会提升交接可靠性。
+
+---
+
+## 9. 对项目定位的影响（回答你的问题）
 
 **"优秀大创"还是"有论文潜力的大创"？**
 
