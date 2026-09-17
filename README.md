@@ -56,9 +56,11 @@ margin(垂直风向) = 0           精确紧
   经验形式 `s_t = V·t_c`（`t_c` 由滚转响应 rise time 定）。**差异**：它是经验标定
   （"must be tailored for each vehicle"）、**不含风**、且**正比于空速**；
   本构造下的是精确闭式、含风、**与空速无关**。
-- **Kim et al. (2022, DASC)** 摘要自称缓冲尺寸可"verified"并"statistically guarantee"。
-  **其全文未获取（付费）**，因此本项目的立项表述限定为
-  "**该构造的充分性未被检验**"，不扩展为"风下缓冲充分性无人验证"。
+- **Kim et al. (2022, DASC)** 研究的是**不确定性感知的缓冲尺寸设计**（给定车辆、GNC
+  不确定性与风，求"需要多少缓冲"），与本项目问的不是同一个问题。
+  **逐字表述**：*Kim studies uncertainty-aware buffer sizing, while the margin
+  characteristics of analytical wind-aware geofence constructions remain unclear.*
+  **不攻击他作，也不过度声明。**
 
 ## 两次被撤回的记录（保留，不删除）
 
