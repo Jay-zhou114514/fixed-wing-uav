@@ -29,7 +29,9 @@
 
 | 文件 | 作用 |
 | --- | --- |
+| `docs/plans/V2_DESIGN.md` | **阶段转段设计**：V2.0 升级逻辑、判据、新增 6 个实验、申报书创新点、会议论文路线 |
 | `docs/FROZEN_PROTOCOL.md` | 满足 G2（部分字段待 S1 实测冻结） |
 | `docs/LITERATURE_AUDIT_2026-09.md` | v1.2 的触发依据；含一次已更正断言 |
 | `docs/AI_USE_DISCLOSURE.md` | AI 参与范围与撤回记录 |
-| `notes/CHAIN_C_THEORY_NOTE.md` | 约束型 ≠ 惩罚型的核验（H2 的 C 级依据） |
+| `notes/CHAIN_C_THEORY_NOTE.md` | 约束型 ≠ 惩罚型的判据（含一次被否决的判据版本） |
+| `notes/verify_frontier_criterion.py` | 判据核验脚本（4000 组随机点集零不一致） |
