@@ -45,6 +45,8 @@
 | **研究问题与 claim 边界（冻结，最高依据）** | `RESEARCH_QUESTION_FREEZE_V2.2.md`（2026-09-18） |
 | V2.1（保留不废止） | `RESEARCH_QUESTION_FREEZE_V2.1.md` |
 | **执行计划** | `RESEARCH_PLAN_v1.3.md` |
+| **会议线计划** | `CONFERENCE_TRACK_V1.0.md` |
+| **期刊线计划** | `JOURNAL_TRACK_V1.0.md` |
 | 设计与论证（背景，被冻结文件取代） | `V2_DESIGN.md` |
 | 潜力评估（是否有空间 / 天花板） | `docs/POTENTIAL_ASSESSMENT.md` |
 | 立项理由判定（含 JAIS 全文核查） | `docs/LITERATURE_AUDIT_V2.md` |
