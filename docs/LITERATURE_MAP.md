@@ -71,6 +71,144 @@ AAAI/AIAA/IEEE 会议层是会议论文的现实目标。
 | 风感知的围栏/缓冲区膨胀 | 2020 已发表，仍在延续 | 见 3.2 |
 | "可认证安全规划"作为框架 | 已被综述占据 | 见 3.4 |
 | 固定翼 + RL + 风场安全 | 2026 正在被做 | 见 3.5 |
+| **"解析定义安全缓冲并证明其充分性"（方法层）** | **已被占据（航空冲突探测领域，定理级成果）** | 见 3.6 |
+| **"固定翼不能紧急停住"作为动机** | **已被占据** | 见 3.6 |
+| **围栏违规预测 + 安全机动选择的形式化验证** | **已被占据（2021，且已飞行试验）** | 见 3.6 |
+
+## 3.6 潜力评估新增的相邻传统（2026-09-17，见 `POTENTIAL_ASSESSMENT.md`）
+
+做潜力评估时发现两条**方法层与动机层**已被占据，必须正面处理：
+
+| 文献 | 年 | 被引 | 占据了什么 |
+| --- | --- | --- | --- |
+| Herencia-Zapana et al., Formal verification of safety buffers for state-based conflict detection and resolution | 2010 | 11 | 用机械定理证明器形式化证明安全缓冲 |
+| **Narkawicz et al., Formal verification of lateral and temporal safety buffers** | 2013 | 5 | 摘要原文："safety buffers are given that **guarantee mathematically** that the probability of a missed alert is zero"，"**formally proven using a mechanical theorem prover**" |
+| **Kouskoulas et al., Good Fences Make Good Neighbors** | 2021 | 2 | **围栏**违规预测 + 安全机动选择的**形式化验证**算法；高阶动力学（线性变化向心加速度）；含模型参数不确定性；**已飞行试验**。且**同用"固定翼不能急停"动机** |
+| Dill et al., SAFEGUARD: An assured safety net technology for UAS | 2016 | **52** | 系统级"保证安全网"（含 stay-in/stay-out 区域），V&V 导向 |
+| D'Souza et al., Feasibility of varying geo-fence ... vehicle performance and wind | 2016 | **32** | 本方向源头：按性能与风算 keep-in 围栏尺寸 |
+
+**对本项目的含义**：
+
+1. **"验证缓冲充分性"不是新方法**——该传统在冲突探测领域已成定理级成果。
+   本项目是**该方法在围栏具体构造上的应用**。
+2. **"固定翼不能急停"不能作为新颖性来源**——已被多次使用。
+3. **仍然未被占据的**：该特定构造（JAIS δu ⊕ δd）的**裕度方向结构**与**精确紧性**
+   （检索：裕度/紧性 0 命中；方向依赖 1 命中且不相关；JAIS 13 条施引无一涉及）。
+4. **同源活跃线（抢先风险）**：
+   `D'Souza 2016 → JAIS 2020 (Stevens & Atkins) → {Stevens 2021, Kim 2021, Kim 2022, Abdul 2026}`
+   —— 该线持续发表但 6 年内未做该构造的充分性验证。风险中等偏低，但存在。
+
+**参考**：该方向确切交叉点（`"fixed-wing" AND geofence`）仅 **9 篇**论文；
+核心论文 JAIS 2020 年均被引约 **2 次**。属冷门小众，非热点。
+
+## 3.7 EXP-FW-V1-27A 的新颖性重叠（2026-09-18 新增，重要）
+
+27A 判定 **H-B 成立**（逐边不蕴含同时；锐角顶点处违反 ≈0.87 R）。
+但核对既有文献发现**该问题的发现层面已被占**：
+
+**Thomas & Sarhadi (2024, *Machines*) §3.4 "Acute Internal Angles"** 原文：
+
+> "A problem arises when the angle between two fences is acute. In this scenario, ...
+> the vehicle will be driven towards the vertex of the two fences and **eventually
+> penetrate the fence**. Furthermore, if the turn is initiated when s⁺ ≤ s_min, then
+> the vehicle will be **unable to complete a full turn**, as the turning circle c₁
+> extends out of the geozone."
+
+即：**"标准方法在锐角顶点失效"已被明确指出**，且该文给出了对策
+（检查两侧最小转弯圆与相邻围栏的距离，必要时提前转向，其 turning circle c₂）。
+
+| 项 | Thomas 2024 §3.4 | EXP-27A |
+| --- | --- | --- |
+| 指出锐角顶点问题 | **是** | 是（独立复现） |
+| 给出对策 | **是**（提前转向 + 检查相邻围栏） | 否 |
+| 量化缺口 | 未报告违反量 | **0.87 R**（首次外摆口径） |
+| "逐边 vs 同时"的形式化 | 未以该形式表述 | **是** |
+
+**因此不可主张"首次发现锐角顶点失效"。** 可主张的收窄为：
+(i) 以"**逐边 vs 同时**"形式化该缺口；
+(ii) 给出**违反量 0.87 R**；
+(iii) 证明 **EXP-27 的逐边判据不充分**（对本项目内部结论的修正）。
+
+**对论文的影响**：C3（适用边界）得到实质强化，但必须在论文中
+**正面引用 Thomas 2024 §3.4**，并把贡献定位在"形式化 + 量化"而非"发现"。
+
+### 3.7.1 定位裁定：**相关工作，不作冲突**（2026-09-18，负责人决定 6）
+
+应负责人要求做了独立复核与文献比对后，**定位如下**（V2.2 第 4 节）：
+
+**引述方式**：
+
+> Thomas & Sarhadi (2024) 指出锐角顶点处转弯圆放不下，并采用"对每个候选转弯方向
+> 检查所有相邻围栏"的判据给出对策（§3.4）。本工作的关系为：**独立复现该机制**，
+> 并**给出其穿透量的闭式表达式** `R·cos(θ/2)`（该文仅做二值判断），
+> 以及**用"逐边 vs 同时"形式化该缺口**。
+
+**为何定位为"相关工作"而非"冲突"——全文关键词核验**：
+
+| 关键词 | 出现次数 | 含义 |
+| --- | --- | --- |
+| `violat*` | **0** | 无违反量 |
+| `overshoot` | **0** | 无超调量 |
+| `depth` / `how far` | **0** | 无深度/量级 |
+| `penetrat*` | 9 | **全部为定性二值判断**（"before penetrating"、"which circles have penetrated"） |
+
+**该文给出的是二值判据（相交/不相交），未给出穿透量公式。**
+
+**因此**：
+
+| 层面 | 判定 |
+| --- | --- |
+| 机制（锐角顶点失效） | 已见该文 → **不主张"首次发现"**（D16） |
+| 判据形式（同时判据） | 已见该文 → **不主张"首次提出"**（D17） |
+| **穿透量闭式律 `R·cos(θ/2)`** | **该文无 → 可主张为新（K8）** |
+| **对本构造逐边判据的否证** | 该文针对自有 ARC 算法，未涉 JAIS δu⊕δd → **属本项目内部结论修正** |
+
+**检索证据**：OpenAlex 全库 `geofence + acute + vertex + turn radius + penetration`
+**仅命中 Thomas 2024 一篇**，该交叉点文献稀疏。
+
+**结论**：27A 的 **K8（闭式律）+ 形式化 + 否证**可作**核心发现（C3）**，
+Thomas 2024 作为**相关工作**正面引用。
+
+## 3.8 计算几何线：圆盘填充与曲率约束路径（2026-09-18 扩检新增）
+
+应负责人要求扩大检索（不只依赖 Thomas 2024 一篇），发现一条**此前完全漏掉**、
+且**比航空文献更贴近本项目问题**的文献线。详见 `docs/LITERATURE_SEARCH_EXTENDED.md`。
+
+| 文献 | 年 | 被引 | 与本项目的关系 |
+| --- | --- | --- | --- |
+| **Agarwal, Biedl, Lazard, Robbins, Suri**, *Curvature-Constrained Shortest Paths in a Convex Polygon*, SIAM J. Computing | 2002 | **79** | 凸多边形内单位曲率机器人的最优路径；最短路径至多 8 段 |
+| **Ahn, Cheong, Matoušek, Vigneron**, *Reachability by Paths of Bounded Curvature in a Convex Polygon*, Comput. Geom.（arXiv:1008.4244） | 2011 | 15 | 给定起点构型的**可达区域**刻画（O(n) 复杂度）；工具 = **圆盘填充 `fil(P)`** |
+| Balachandran, Narkawicz, Muñoz, Consiglio, *A Geofence Violation Prevention Mechanism for Small UAS*, NASA | 2018 | 4 | 基于**接近率约束**的围栏越界预防（作者含已引的形式化验证作者） |
+| *The Complexity of the 2D Curvature-Constrained Shortest-Path Problem* | 1998 | **82** | 该问题为 NP-hard（离散化意义下）——说明是被深入研究过的经典问题 |
+
+**关键等价（已核对 Ahn 2011 全文）**：
+
+```text
+Ahn 2011 的 "圆盘填充 fil(P)"：半径 R 的圆盘须完全落在 P 内
+  ⟺  R ≤ d_e 对所有边 e（d_e 为圆心到边距离）
+  ⟺  本项目 27A 的同时判据 V = min_sign max_e (R − d_e)
+
+Ahn 2011 的 Lemma 3（Pocket lemma）：路径进入 pocket 后无法离开
+  ⟺  本项目 27A 的"零余量方向"概念（可达性受限的方向）
+```
+
+**对本项目定位的影响（重要，属收窄）**：
+
+| 项 | 原定位 | 扩检后 |
+| --- | --- | --- |
+| **同时判据** | 隐含视为本项目贡献 | **❌ 不新**：即计算几何的**圆盘填充可行性**，Ahn 2011 已系统使用 |
+| **逐边 vs 同时的形式化** | 视为本项目贡献 | **❌ 大幅削弱** |
+| **K8 闭式律 `R·cos(θ/2)`** | 可主张 | **仍未在任何文献中找到该形式**，可保留 |
+
+**修正后的正确表述（比原表述更准且更难被驳倒）**：
+
+> **JAIS 2020 的缓冲构造缺少圆盘填充/可达性检验**；
+> 本项目指出该缺失、给出**越界量的闭式表达式** `R·cos(θ/2)`，
+> 并证明其**逐边判据不充分**。
+> 该检验的**方法**（圆盘填充）在计算几何中早已成熟（Ahn 等 2011）。
+
+**新增引用义务**（论文必须包含，否则定位不成立）：
+Agarwal 2002、**Ahn 2011**、Balachandran 2018、Thomas & Sarhadi 2024。
 
 ## 5. 观察到的异常（标注置信度）
 
@@ -142,3 +280,35 @@ AAAI/AIAA/IEEE 会议层是会议论文的现实目标。
 对边法线明显偏离风轴的围栏，多边形近似的额外余量可能覆盖缺口。
 
 这是一条可检验的预言，已登记为 EXP-FW-V1-21 的核心假设。
+
+### 11.1 EXP-FW-V1-27 的检验结果（2026-09-17 补充）
+
+上述预言已由 `EXP-FW-V1-27` 在 125 个凸多边形构型、3 个风速比上检验。结论：
+
+**前半部分成立，后半部分需修正。**
+
+- ✅ "n 位于两条边法线之间时缓冲**大于**法向值" —— 成立（P1 通过，
+  偏差在浮点极限 7e-14 m）。构造对顶点给出额外裕度 `h = δu/sin(θ_int/2) ≥ δu`，
+  顶角越尖裕度越大。
+- ⚠️ "**最坏情况**是风向与边法向一致；简单几何结构" —— **需修正**：
+  最坏情形由"**是否存在一条法线恰 ⊥ 风向的边**"决定，**与形状复杂度无关**。
+  实测三个 w 下的全局最小 margin 均由**正六边形 α = 0°**取得（方向 −90.0°），
+  而非对齐矩形；两者 margin 都等于 0。
+
+### 11.2 由 EXP-FW-V1-27 得到的结构（等级 A）
+
+```text
+margin(n) = given(n) − required(n)
+
+margin(0°)  = δu            （沿风向，与 w 无关）—— 与 EXP-FW-V1-22 互证
+margin(90°) = 0             （垂直风向，精确紧）
+```
+
+即该构造在最坏方向上**零冗余**：`required(90°) = given(90°) = δu = R`。
+
+**候选解释（等级 C，未检验）**：若 `margin(90°) = 0` 是设计上的精确紧，
+则**任何未建模效应**（延迟、风估计误差、跟踪误差、滚转瞬态）都会直接产生缺口，
+因为没有余量可消耗。这正是 EXP-FW-V1-26（闭环）的动机。
+
+**未覆盖**：凹多边形与顶点展平（该展平为回收面积而做，可能**减少**缓冲）。
+登记为 **EXP-FW-V1-27B**，是最可能找到真实缺口之处。
