@@ -438,3 +438,52 @@
   审计曾误按"内切圆心距原顶点"核对得 `R/sin(θ/2)`，二者是不同量（θ=90° 时 41.25 vs 58.34）。
   已重新数值确认 `d* = R·cot(θ/2)`（n=3…6 逐位吻合）。
 - 状态：已确认（2026-09-19）
+
+---
+
+## FW-D-019 Thomas & Sarhadi 2024 全文核验：D20/D21 新增，一处记录过宽更正
+
+- 日期：2026-09-19
+- 触发：负责人提供 **Thomas & Sarhadi (2024, *Machines* 12(1), 36)** 全文
+  （此前仅有摘要与关键词核查；`docs/LITERATURE_MAP.md` §3.7 的引文来自二手）
+- **核验方式**：**只做对比，不复现其算法、不验算其数值**（`FROZEN_PROTOCOL` §13.7）。
+  逐节读取 §1–§3（+ 工作区已有 `thomas.txt` 全文的 §4.3–§5.4）。
+- **核验结果（四项）**：
+  1. 我方此前**逐字引用的 §3.4 原文准确** ✓（"driven towards the vertex … eventually
+     penetrate the fence … unable to complete a full turn, as the turning circle c₁
+     extends out of the geozone"）；
+  2. **一处记录过宽（需更正）**：此前写"该文**仅给二值判据**、未给任何闭式"。
+     实际该文给出**直边**闭式：`s_min = r(cscθ−cotθ) = r·tan(θ/2)`（式 10）
+     + 瞬态 `s_t = V·t_c`（式 12；§4.3 式 23：`t_c = −τ ln(1−φ/φ_max) = 3.7 s`，
+     滚转一阶 τ = 0.8 s）；转弯半径 `r = V²/(g tanφ_max)`（式 11）；
+     并在 §3.4 给出**联合检验**（两转弯圆 × 三条围栏，判据 `(i∧ii)∨iii`）。
+     → 新增 **D20**：**不得**称该文"仅给二值判据"；
+       正确表述为"**直边有闭式、顶点仅定性；未给穿透深度与死区范围**"。
+     **K8/K9 的增量不受影响**（`depth`/`overshoot`/`margin`/`buffer size` 全文各 0 次）；
+     **D17（不主张首次提出同时判据）得到加强**；
+  3. **空速无关性须限定条件**：该文用协调转弯模型 `r ∝ V²`，
+     而本项目 `R = Va/ω` 隐含"最大转弯率 ω 固定"（`R ∝ V`）。
+     二者可统一（`ω_max = g tanφ_max / V`），但**结论不同**：
+     ω 固定 ⟹ `τ` 与空速无关；协调转弯 ⟹ `τ ∝ V`。
+     → 新增 **D21**：H2/K1 **降为"模型条件性结论"**，不得作通用工程性质；
+       申报书与论文须写明前提。**不推翻 K1/H2**（其在所述模型内验证至机器精度）；
+  4. **标题更正**：该文正确标题为
+     **"Geofencing Motion Planning for Unmanned Aerial Vehicles Using an
+     Anticipatory Range Control Algorithm"**（Machines 2024, 12(1), 36；
+     DOI 10.3390/machines12010036）。此前论文草稿参考文献 [9] 误记为
+     "Geofence Violation Prediction and Safe Maneuver Selection"——**已更正**。
+- **该文对**本项目**有利**的三点（正面收获）：
+  1. **同领域权威陈述支持动机**：该文明言固定翼"will exceed the fence by some
+     considerable distance"，且"**geofencing remains an open problem**"；
+  2. **风是其承认的未解项**：§5.2 承认用"地速代空速 + 调大 `t_c`"作松弛，
+     并明言侧滑"would still potentially push the vehicle outside of the geozone"，
+     **需要额外建模**——**恰是本项目填补的空缺**；
+  3. **其自述仅完成软件仿真**：§5.4 "It remains to demonstrate … with hardware"。
+- **新增引用义务**：Thiele et al. (2019)（转弯曲率非恒定；仅凸 geozone）、
+  Seiferth et al.（Voronoi safety zone，尺寸由倾角与空速定）。
+- 受影响文件（**已全部更正**）：`docs/LITERATURE_MAP.md` §3.7.1、
+  `docs/paper/CONFERENCE_PAPER_DRAFT_V0.1.md`（§V-D、Related Work、ref [9]、§VII）、
+  `docs/application/DACHUANG_APPLICATION_V1.0.md`（线 C 表格）、
+  `docs/plans/RESEARCH_QUESTION_FREEZE_V2.4.md`（新增 §9 D20/D21）；
+  新建 `docs/LITERATURE_ANALYSIS_THOMAS2024_FULLTEXT.md`。
+- 状态：已确认（2026-09-19）

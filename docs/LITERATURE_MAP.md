@@ -149,10 +149,19 @@ AAAI/AIAA/IEEE 会议层是会议论文的现实目标。
 | --- | --- | --- |
 | `violat*` | **0** | 无违反量 |
 | `overshoot` | **0** | 无超调量 |
-| `depth` / `how far` | **0** | 无深度/量级 |
-| `penetrat*` | 9 | **全部为定性二值判断**（"before penetrating"、"which circles have penetrated"） |
+| `depth` / `how far` / `margin` / `buffer size` | **各 0** | 无深度/裕度/缓冲量级 |
+| `penetrat*` | 9 | **全部为定性表述**（"before penetrating"、"will eventually penetrate"、"which circles have penetrated"） |
 
-**该文给出的是二值判据（相交/不相交），未给出穿透量公式。**
+**该文未给出穿透量或死区范围的公式。**
+
+> **⚠ 表述更正（2026-09-19，获全文后核验）**：此前本处写作"该文给出的是**二值判据**
+> （相交/不相交），**未给出穿透量公式**"。**该表述过宽**：
+> 该文在 §3.2 给出**直边**轨道触发距离闭式
+> `s_min = r(cscθ − cotθ) = r·tan(θ/2)`（式 10）+ 瞬态项 `s_t = V·t_c`（式 12/23），
+> 并在 §3.4 给出**联合检验**（两转弯圆 × 三条围栏，判据 `(i∧ii)∨iii`）。
+> **准确表述**：该文对**直边**有闭式、对**顶点**仅定性；
+> **未给出顶点穿透深度与死区范围**（`depth`/`overshoot`/`margin`/`buffer size` 各 0 次）。
+> 详见 `LITERATURE_ANALYSIS_THOMAS2024_FULLTEXT.md`。**K8/K9 的增量不受影响。**
 
 **因此**：
 

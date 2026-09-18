@@ -287,15 +287,22 @@ deviation `6.1e-16` and shape-independence spread of exactly zero.
 ### D. Relation to prior work
 
 The failure mechanism at acute vertices is already identified in
-[Thomas & Sarhadi 2024, §3.4], which reports that the turning circle does not
-fit and provides a binary test together with a mitigation (initiating the turn
-earlier). We therefore make **no claim of first discovery**. Our increment is
-the **closed-form quantification** of the overshoot (11) and the dead-zone
-extent (12), together with the demonstration in §V-A that the per-edge
-criterion underlying the construction studied here is not sufficient. The
-joint-feasibility test itself is the disk-filling feasibility long established
-in computational geometry [Ahn et al. 2011]; we apply it to this construction
-rather than introducing it.
+[Thomas & Sarhadi 2024, §3.4]: the turning circle does not fit, the vehicle is
+driven toward the vertex and "will eventually penetrate the fence", and a turn
+initiated at the standard trigger leaves the turning circle outside the
+geozone. That work gives a straight-edge trigger-distance closed form
+`s_min = r(cscθ − cotθ) = r·tan(θ/2)` with a transient term `s_t`, and handles
+acute corners by testing **both** turning circles against the approaching fence
+and its two neighbours. We therefore make **no claim of first discovery of the
+mechanism, nor of a joint test**. Its treatment of the corner is **qualitative**
+— it reports that penetration occurs and may be unavoidable, but gives no
+penetration depth and no dead-zone extent (`depth`, `overshoot`, `margin`,
+`buffer size` each occur zero times in the full text). Our increment is
+therefore the **closed-form quantification**: the overshoot (11) and the dead
+zone (12), together with the demonstration in §V-A that the per-edge criterion
+underlying the construction studied here is not sufficient. The joint-feasibility
+test itself is the disk-filling feasibility long established in computational
+geometry [Ahn et al. 2011]; we apply it rather than introduce it.
 
 ---
 
@@ -395,14 +402,22 @@ We state the boundaries of these results explicitly.
    earlier work in this project, found to be a criterion artifact, and retain
    the retraction in the record.
 6. **Not claimed as contributions.** We do not claim first identification of
-   acute-vertex failure [Thomas & Sarhadi 2024]; nor first use of a joint
-   feasibility test (disk filling, [Ahn et al. 2011]); nor the method of
-   analytically defining a buffer and proving sufficiency [Narkawicz et al.
-   2013]; nor that prior geofencing work ignores direction dependence — the
-   construction studied here is itself directional, and [Kim et al. 2022] uses
-   an isotropic cross-section by construction in a different problem
-   (sizing a buffer around one known trajectory), which is a design choice
-   rather than a defect.
+   acute-vertex failure, nor first use of a joint test, nor that prior work
+   provides only binary corner tests — [Thomas & Sarhadi 2024] gives a
+   straight-edge trigger closed form and a joint corner test [Sec. V-D]. We do
+   not claim first use of a joint feasibility test (disk filling, [Ahn et al.
+   2011]); nor the method of analytically defining a buffer and proving
+   sufficiency [Narkawicz et al. 2013]; nor that prior geofencing work ignores
+   direction dependence — the construction studied here is itself directional,
+   and [Kim et al. 2022] uses an isotropic cross-section by construction in a
+   different problem (sizing a buffer around one known trajectory), which is a
+   design choice rather than a defect.
+7. **Airspeed independence is model-conditional.** Result (2c) holds with the
+   maximum turn rate ω held fixed, i.e. `R ∝ Va`. Under the coordinated-turn
+   model `R = V²/(g·tan φ_max)` used in [Thomas & Sarhadi 2024], the turn radius
+   scales as `V²` and `τ` scales as `V`, so the invariance does **not** hold in
+   that model. We state (2c) as a property of the idealized constant-turn-rate
+   model and do not present it as a general engineering law.
 
 ---
 
@@ -437,11 +452,19 @@ feasibility over a polygon, a mature notion in computational geometry:
 exactly this tool, and [Agarwal et al. 2002] gives classical results for
 curvature-constrained paths. This is the geometric basis for §V-A.
 
-**Corner handling in geofencing.** **[Thomas & Sarhadi 2024, §3.4]** identifies
-the acute-vertex failure and gives a binary test with an early-turn mitigation,
-and compensates turn-initiation transients empirically. Our contribution is the
-closed-form overshoot (11), the dead-zone extent (12), and the formal statement
-that the per-edge criterion is not sufficient.
+**Corner handling in geofencing.** **[Thomas & Sarhadi 2024]** (ARC) gives a
+predictive range controller for arbitrary polygonal geozones, including concave
+ones, with a straight-edge trigger closed form `s_min = r·tan(θ/2)` plus a
+turn-transient term `s_t = V·t_c` derived from the roll response rise time.
+At acute vertices (§3.4) it identifies the failure and handles it by testing
+both turning circles jointly against the approaching fence and its two
+neighbours; the corner treatment itself is qualitative. It does not model wind,
+and states in §5.2 that compensating for it by slack on `t_c` leaves sideslip
+able to "potentially push the vehicle outside of the geozone", requiring
+additional modelling. Our contribution is the closed-form overshoot (11), the
+dead-zone extent (12), and the formal statement that a per-edge criterion is
+not sufficient — evaluated under steady wind on the analytic construction of
+[JAIS 2020], which that work does not address.
 
 **Positioning of this work.** Kim studies uncertainty-aware buffer sizing,
 while the margin characteristics of analytical wind-aware geofence
@@ -491,8 +514,11 @@ wind-estimate error.
    DOI 10.1109/DASC55683.2022.9925807.
 8. Kim, J. T., Mathur, A., Liberko, N., Atkins, E. M. "Volumization and Inverse
    Volumization for Low-Altitude Airspace Geofencing." *AIAA AVIATION*, 2021.
-9. **Thomas, P. R., Sarhadi, P. "Geofence Violation Prediction and Safe
-   Maneuver Selection." *Machines*, 2024.** *[锐角顶点机制；须正面引用]*
+9. **Thomas, P. R., Sarhadi, P. "Geofencing Motion Planning for Unmanned
+   Aerial Vehicles Using an Anticipatory Range Control Algorithm."
+   *Machines* 12(1), 36, 2024.** DOI 10.3390/machines12010036.
+   *[锐角顶点机制；须正面引用。标题已于 2026-09-19 按原文更正——此前误记为
+   "Geofence Violation Prediction and Safe Maneuver Selection"]*
 10. **Narkawicz, A., et al. "The MINIMUM-margin theorem..." / analytical buffer
     definition and formal proof. *Proc. IMechE Part G*, 2013.** *[方法学来源]*
 11. Herencia-Zapana, H., et al. "PVS Verification of an Air Traffic Conflict
