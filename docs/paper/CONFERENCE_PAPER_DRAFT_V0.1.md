@@ -363,8 +363,10 @@ treating the disk as a criterion — behaves differently. Tests split cleanly:
 
 `[EXP-26-P0, grade A]` **Both must be reported together.** Reporting only
 Test A would support the incorrect reading that an isotropic approximation is
-always safe; Test B shows it fails in both directions under wind (insufficient
-upwind, excessive downwind).
+always safe; Test B shows it fails in both directions under wind: **insufficient
+downwind** (required `δd > R`) and **excessive upwind** (required `< R`).
+*(Direction corrected 2026-09-19: the direction convention of `required(n)`
+places `n=0` along the wind, where `required = δd`.)*
 
 ---
 
