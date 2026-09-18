@@ -169,6 +169,47 @@ AAAI/AIAA/IEEE 会议层是会议论文的现实目标。
 **结论**：27A 的 **K8（闭式律）+ 形式化 + 否证**可作**核心发现（C3）**，
 Thomas 2024 作为**相关工作**正面引用。
 
+## 3.8 计算几何线：圆盘填充与曲率约束路径（2026-09-18 扩检新增）
+
+应负责人要求扩大检索（不只依赖 Thomas 2024 一篇），发现一条**此前完全漏掉**、
+且**比航空文献更贴近本项目问题**的文献线。详见 `docs/LITERATURE_SEARCH_EXTENDED.md`。
+
+| 文献 | 年 | 被引 | 与本项目的关系 |
+| --- | --- | --- | --- |
+| **Agarwal, Biedl, Lazard, Robbins, Suri**, *Curvature-Constrained Shortest Paths in a Convex Polygon*, SIAM J. Computing | 2002 | **79** | 凸多边形内单位曲率机器人的最优路径；最短路径至多 8 段 |
+| **Ahn, Cheong, Matoušek, Vigneron**, *Reachability by Paths of Bounded Curvature in a Convex Polygon*, Comput. Geom.（arXiv:1008.4244） | 2011 | 15 | 给定起点构型的**可达区域**刻画（O(n) 复杂度）；工具 = **圆盘填充 `fil(P)`** |
+| Balachandran, Narkawicz, Muñoz, Consiglio, *A Geofence Violation Prevention Mechanism for Small UAS*, NASA | 2018 | 4 | 基于**接近率约束**的围栏越界预防（作者含已引的形式化验证作者） |
+| *The Complexity of the 2D Curvature-Constrained Shortest-Path Problem* | 1998 | **82** | 该问题为 NP-hard（离散化意义下）——说明是被深入研究过的经典问题 |
+
+**关键等价（已核对 Ahn 2011 全文）**：
+
+```text
+Ahn 2011 的 "圆盘填充 fil(P)"：半径 R 的圆盘须完全落在 P 内
+  ⟺  R ≤ d_e 对所有边 e（d_e 为圆心到边距离）
+  ⟺  本项目 27A 的同时判据 V = min_sign max_e (R − d_e)
+
+Ahn 2011 的 Lemma 3（Pocket lemma）：路径进入 pocket 后无法离开
+  ⟺  本项目 27A 的"零余量方向"概念（可达性受限的方向）
+```
+
+**对本项目定位的影响（重要，属收窄）**：
+
+| 项 | 原定位 | 扩检后 |
+| --- | --- | --- |
+| **同时判据** | 隐含视为本项目贡献 | **❌ 不新**：即计算几何的**圆盘填充可行性**，Ahn 2011 已系统使用 |
+| **逐边 vs 同时的形式化** | 视为本项目贡献 | **❌ 大幅削弱** |
+| **K8 闭式律 `R·cos(θ/2)`** | 可主张 | **仍未在任何文献中找到该形式**，可保留 |
+
+**修正后的正确表述（比原表述更准且更难被驳倒）**：
+
+> **JAIS 2020 的缓冲构造缺少圆盘填充/可达性检验**；
+> 本项目指出该缺失、给出**越界量的闭式表达式** `R·cos(θ/2)`，
+> 并证明其**逐边判据不充分**。
+> 该检验的**方法**（圆盘填充）在计算几何中早已成熟（Ahn 等 2011）。
+
+**新增引用义务**（论文必须包含，否则定位不成立）：
+Agarwal 2002、**Ahn 2011**、Balachandran 2018、Thomas & Sarhadi 2024。
+
 ## 5. 观察到的异常（标注置信度）
 
 | # | 观察 | 置信度 | 说明 |
