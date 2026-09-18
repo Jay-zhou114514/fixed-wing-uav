@@ -5,8 +5,8 @@
 > **负责人随后提供了该论文的页面截图（覆盖正文 I–VI 节全部、Fig 1–16、Table I–V
 > 与参考文献表），全文已读。**
 >
-> - **现行记录**：`LITERATURE_ANALYSIS_KIM2022_FULLTEXT.md`（含式 7 与 Table V 的
->   数值交叉核对，脚本 `notes/verify_kim2022_eq7.py`）
+> - **现行记录**：`LITERATURE_ANALYSIS_KIM2022_FULLTEXT.md`
+>   （**只做方法对比，不复现其模型**）
 > - **四个悬置问题已全部解答**（答案均为"否"，见该文件第 4 节）
 > - **Phase B 门禁已解除**；**D19 新增**（冻结 V2.4）
 >

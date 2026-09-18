@@ -215,7 +215,7 @@ Agarwal 2002、**Ahn 2011**、Balachandran 2018、Thomas & Sarhadi 2024。
 **Kim, Liberko & Atkins (2022), DASC, `10.1109/DASC55683.2022.9925807`** ——
 与 JAIS 2020 **同一课题组**（Atkins），其参考文献 [6] 即 JAIS 2020 本身。
 全文已由负责人提供（截图，覆盖 I–VI 节 + 全部图表），
-**式 7 已与 Table IV/V 数值交叉核对通过**（脚本 `notes/verify_kim2022_eq7.py`）。
+**本记录只做方法对比，不复现其模型**（负责人指示，2026-09-19）。
 详见 `LITERATURE_ANALYSIS_KIM2022_FULLTEXT.md`。
 
 **其缓冲公式（式 7）**：
