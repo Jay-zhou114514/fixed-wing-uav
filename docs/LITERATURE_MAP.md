@@ -101,6 +101,37 @@ AAAI/AIAA/IEEE 会议层是会议论文的现实目标。
 **参考**：该方向确切交叉点（`"fixed-wing" AND geofence`）仅 **9 篇**论文；
 核心论文 JAIS 2020 年均被引约 **2 次**。属冷门小众，非热点。
 
+## 3.7 EXP-FW-V1-27A 的新颖性重叠（2026-09-18 新增，重要）
+
+27A 判定 **H-B 成立**（逐边不蕴含同时；锐角顶点处违反 ≈0.87 R）。
+但核对既有文献发现**该问题的发现层面已被占**：
+
+**Thomas & Sarhadi (2024, *Machines*) §3.4 "Acute Internal Angles"** 原文：
+
+> "A problem arises when the angle between two fences is acute. In this scenario, ...
+> the vehicle will be driven towards the vertex of the two fences and **eventually
+> penetrate the fence**. Furthermore, if the turn is initiated when s⁺ ≤ s_min, then
+> the vehicle will be **unable to complete a full turn**, as the turning circle c₁
+> extends out of the geozone."
+
+即：**"标准方法在锐角顶点失效"已被明确指出**，且该文给出了对策
+（检查两侧最小转弯圆与相邻围栏的距离，必要时提前转向，其 turning circle c₂）。
+
+| 项 | Thomas 2024 §3.4 | EXP-27A |
+| --- | --- | --- |
+| 指出锐角顶点问题 | **是** | 是（独立复现） |
+| 给出对策 | **是**（提前转向 + 检查相邻围栏） | 否 |
+| 量化缺口 | 未报告违反量 | **0.87 R**（首次外摆口径） |
+| "逐边 vs 同时"的形式化 | 未以该形式表述 | **是** |
+
+**因此不可主张"首次发现锐角顶点失效"。** 可主张的收窄为：
+(i) 以"**逐边 vs 同时**"形式化该缺口；
+(ii) 给出**违反量 0.87 R**；
+(iii) 证明 **EXP-27 的逐边判据不充分**（对本项目内部结论的修正）。
+
+**对论文的影响**：C3（适用边界）得到实质强化，但必须在论文中
+**正面引用 Thomas 2024 §3.4**，并把贡献定位在"形式化 + 量化"而非"发现"。
+
 ## 5. 观察到的异常（标注置信度）
 
 | # | 观察 | 置信度 | 说明 |

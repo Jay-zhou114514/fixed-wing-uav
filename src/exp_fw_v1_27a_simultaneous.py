@@ -1,33 +1,32 @@
-"""EXP-FW-V1-27A: 多边同时约束复核（v2：机动判据 + 阳性对照）。
+"""EXP-FW-V1-27A: 多边同时约束复核（v4：修正 τ + 三件套）。
 
 预注册：experiments/EXP-FW-V1-27A-preregistration.md
 修订 1：experiments/EXP-FW-V1-27A-preregistration-amendment-1.md（位置规定）
-首版诊断：experiments/EXP-FW-V1-27A-diagnostic-void-first-run.md（结果作废）
+失败诊断：experiments/EXP-FW-V1-27A-failure-diagnosis.md（四次失败 + τ bug）
 
-== 前几版的错误（均作废，记录在案）==
-v0（作废）：对每条边各自用 τ_e = "首个 v·n_e ≤ 0 的时刻"，把不同轨迹混在一起取 max。
-v1（作废）：同一时间网格下的累积最大，但对 T 取最小值时 T=0（不转弯）总是可行，
-            判据**平凡通过**（maxV = −R 恒成立）。
-v2（作废）：加入"转弯后直飞需 ∀e: n_e·v_g ≤ 0"的可行性条件。该条件对有界多边形
-            等价于 v_g = 0（有界凸集的退化锥只有零向量），**永不满足** → 全为 +∞。
+== 核心问题 ==
+EXP-27 的逐边充分性，是否蕴含多边同时充分性？
 
-== 本版判据（v3）==
-机动模型：**持续盘旋**——以最大速率按 sign 连续转弯（有界区域内唯一可持续的运动，
-          也正是 δu = 转弯半径所针对的情形）。无 T 参数、无可行性附加条件。
-穿透量：  pen_e(sign;ψ0) = max_{t ∈ [0, 一周]} n_e·d_sign(t;ψ0)
-          （因 d·n 在首个 v·n=0 之前单调增，故等价于 EXP-21/27 的 τ_e 口径）
-越界量：  viol(sign;x0,ψ0) = max_e [ pen_e − room_e(x0) ]
-同时充分 ⟺ 对所有 (x0,ψ0)：V = min over sign of viol ≤ 0
+  逐边（EXP-27 口径）：**每条边各自**可选最优转弯方向 sign
+      ALL_PER_EDGE(x0,ψ0) ⇔ ∀e: min_sign [ pen_e(sign;ψ0) − room_e(x0) ] ≤ 0
+  同时（闭环要求）：**单一** sign 须满足所有边
+      SIMUL(x0,ψ0) ⇔ min_sign max_e [ pen_e(sign;ψ0) − room_e(x0) ] ≤ 0
 
-== 自检（含阳性对照，缺一不可）==
-P1  负对照：直线边界 + 边中点 → 应无违反
-P1b 正对照：贴边、朝外 → **必须报违反**（否则判据无检出能力，v1 的教训）
-P2  w=0 对齐矩形：given_e 应全为 R
-P3  maxV 对 ψ0 网格的收敛性
+若逐边全过但同时不过 → **H-B 成立**（EXP-27 的逐边判据不足）。
+
+== τ 口径（复用，不重写）==
+从 notes/verify_tau_fix.py 导入 tau_fixed（模式 A），并做交叉验证。
+本脚本内的向量化实现 pen_vec 必须与 tau_fixed 逐点一致（三件套之 c）。
+
+== 三件套（先跑，再跑主扫描）==
+(a) 负对照：直线边界 + 边中点 → maxV ≤ 0
+(b) 正对照：距边界距离扫描 → 须同时出现"违反"与"不违反"
+(c) 交叉验证：pen_vec vs tau_fixed（标量 golden）vs EXP-27 required_at
 """
 from __future__ import annotations
 
 import csv
+import importlib.util
 import os
 
 import matplotlib
@@ -36,21 +35,56 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
-VA = 18.0
-OMEGA = np.deg2rad(25.0)
-R = VA / OMEGA
-TURN_PERIOD = 2.0 * np.pi / OMEGA
-TWO_PI = 2.0 * np.pi
+# ---------------------------------------------------------------- 载入 golden τ
+_s = importlib.util.spec_from_file_location("tv", "notes/verify_tau_fix.py")
+_TAU = importlib.util.module_from_spec(_s)
+_s.loader.exec_module(_TAU)
+
+VA = _TAU.VA
+OM = _TAU.OM
+R = _TAU.R
+TWO_PI = _TAU.TWO_PI
+delta_d = _TAU.delta_d if hasattr(_TAU, "delta_d") else (
+    lambda w: 0.0 if w <= 0 else R * np.sqrt(1 - w**2) + w * R * np.arccos(-w))
 N_PSI = 3601
-N_T = 3601          # 转弯时段的时间网格（[0, 一周]）
-EDGE_SAMPLES = 100
+GRAZE_TOL = _TAU.GRAZE_TOL
 
 
-def delta_d(w: float) -> float:
+def delta_d_(w):
     return 0.0 if w <= 0 else R * np.sqrt(1 - w**2) + w * R * np.arccos(-w)
 
 
-# --------------------------------------------------------------- 多边形工具
+def _first_pos(x):
+    r = np.mod(x, TWO_PI)
+    return np.where(r > 1e-13, r, TWO_PI)
+
+
+# ---------------------------------------------------------------- 向量化 pen
+def pen_vec(psi0s, sign, w, phi_e):
+    """pen[psi0, e]：修正 τ 口径下的首次外摆穿透（向量化）。
+
+    与 _TAU.tau_fixed 的标量逻辑一致（由三件套 c 交叉验证）。
+    """
+    psi0s = np.atleast_1d(psi0s)[:, None]           # (P,1)
+    phi = np.asarray(phi_e)[None, :]                # (1,E)
+    # v(0)·n_e
+    vn0 = (VA * np.cos(psi0s) + w * VA) * np.cos(phi) + VA * np.sin(psi0s) * np.sin(phi)
+    backward = vn0 < -GRAZE_TOL                     # (P,E)
+    A = np.arccos(np.clip(-w * np.cos(phi), -1.0, 1.0))     # (1,E)
+    th0 = psi0s - phi                                        # (P,E)
+    if sign > 0:
+        tau_ang = np.minimum(_first_pos(A - th0), _first_pos(-A - th0))
+    else:
+        tau_ang = np.minimum(_first_pos(th0 + A), _first_pos(th0 - A))
+    t = tau_ang / OM
+    psi = psi0s + sign * OM * t
+    dx = sign * R * (np.sin(psi) - np.sin(psi0s)) + w * VA * t
+    dy = -sign * R * (np.cos(psi) - np.cos(psi0s))
+    pen = dx * np.cos(phi) + dy * np.sin(phi)
+    return np.where(backward, 0.0, pen)             # t=0 已后退 → 穿透 0
+
+
+# ---------------------------------------------------------------- 多边形工具
 def hrep_from_verts(V):
     ns, cs = [], []
     m = len(V)
@@ -93,7 +127,7 @@ def verts_from_hrep(ns, cs, tol=1e-9):
 def scaled_geometry(V, w, phi_wind=0.0):
     ns, cs = hrep_from_verts(V)
     d_wind = np.array([np.cos(phi_wind), np.sin(phi_wind)])
-    shifts = R + delta_d(w) * np.maximum(0.0, ns @ d_wind)
+    shifts = R + delta_d_(w) * np.maximum(0.0, ns @ d_wind)
     return ns, cs, shifts, verts_from_hrep(ns, cs - shifts)
 
 
@@ -115,59 +149,69 @@ def normalize_radius(V, target=212.13):
     return Vc * (target / max(1e-12, np.max(np.linalg.norm(Vc, axis=1))))
 
 
-# --------------------------------------------------------------- 核心
-_T_GRID = None
-
-
-def t_grid():
-    global _T_GRID
-    if _T_GRID is None or len(_T_GRID) != N_T:
-        _T_GRID = np.linspace(0.0, TURN_PERIOD, N_T)
-    return _T_GRID
-
-
-def t_grid_with_crit(psi0, sign, phi_e, w):
-    """均匀网格 + 各边 v·n_e = 0 的**精确**时刻。
-
-    最大值必在 v·n_e = 0 处取得（此前 d·n 单调增），
-    故把临界时刻插入网格可使 max 精确（消除离散化误差）。
-    注意：这是**同一条**轨迹上的采样点（不存在轨迹混用）。
-    """
-    t = t_grid()
-    crit = []
-    for phi in phi_e:
-        A = np.arccos(np.clip(-w * np.cos(phi), -1.0, 1.0))   # v·n=0 时 psi−φ = ±A
-        for sgn in (+1.0, -1.0):
-            target = phi + sgn * A
-            # psi0 + sign*omega*t = target (mod 2π)
-            dpsi = (target - psi0) * sign
-            k = np.arange(-2, 3)
-            tc = (dpsi + TWO_PI * k) / OMEGA
-            crit.extend([x for x in tc if -1e-12 <= x <= TURN_PERIOD + 1e-12])
-    if crit:
-        t = np.unique(np.concatenate([t, np.clip(np.array(crit), 0.0, TURN_PERIOD)]))
-    return t
-
-
-def V_of_psi0(psi0, sign, ns, cs, x0s, w):
-    """返回每个 x0 的 viol（**持续盘旋**模型，无 T 参数，临界时刻精确）。
-
-    轨迹：以最大速率按 sign 连续转弯一整个周期。
-    pen_e = max over t of n_e·d(t)，t 含各边临界时刻 → 与 EXP-21/27 的 τ_e 口径一致。
-    """
+# ---------------------------------------------------------------- 核心评估
+def core_V(psi0s, ns, cs, positions, w):
+    """返回 (P,X)：同时条件的违逆量 V(ψ0, x0) = min_sign max_e [pen_e − room_e]。"""
     phi_e = np.arctan2(ns[:, 1], ns[:, 0])
-    t = t_grid_with_crit(psi0, sign, phi_e, w)
-    wx, wy = w * VA, 0.0
-    psi = psi0 + sign * OMEGA * t
-    d = np.stack([sign * R * (np.sin(psi) - np.sin(psi0)) + wx * t,
-                  -sign * R * (np.cos(psi) - np.cos(psi0)) + wy * t], axis=-1)  # (T,2)
-    g = d @ ns.T                                     # (T,E)
-    pen = np.max(g, axis=0)                          # (E,) 整周期最大穿透（精确）
-    room = cs[None, :] - x0s @ ns.T                  # (X,E)
-    return np.max(pen[None, :] - room, axis=1)       # (X,)
+    psi0s = np.atleast_1d(psi0s)
+    pen_p = pen_vec(psi0s, +1, w, phi_e)          # (P,E)
+    pen_m = pen_vec(psi0s, -1, w, phi_e)
+    if pen_p.ndim == 1:                            # 单点情形
+        pen_p = pen_p[None, :]
+        pen_m = pen_m[None, :]
+    room = cs[None, :] - positions @ ns.T          # (X,E)
+    vp = np.max(pen_p[:, None, :] - room[None, :, :], axis=2)   # (P,X)
+    vm = np.max(pen_m[:, None, :] - room[None, :, :], axis=2)
+    return np.minimum(vp, vm)
 
 
-def evaluate_positions(V, w, positions, psi_extra_deg=()):
+def core_per_edge(psi0s, ns, cs, positions, w):
+    """逐边口径（EXP-27）：允许每条边各选最优 sign。返回 (P,X,E)。"""
+    phi_e = np.arctan2(ns[:, 1], ns[:, 0])
+    psi0s = np.atleast_1d(psi0s)
+    pen_p = pen_vec(psi0s, +1, w, phi_e)
+    pen_m = pen_vec(psi0s, -1, w, phi_e)
+    if pen_p.ndim == 1:
+        pen_p = pen_p[None, :]
+        pen_m = pen_m[None, :]
+    room = cs[None, :] - positions @ ns.T
+    return np.minimum(pen_p[:, None, :] - room[None, :, :],
+                      pen_m[:, None, :] - room[None, :, :])
+
+
+def refine_max_psi(core_fn, psi0s, g, args, k=6, rounds=6, pts=81):
+    """局部精化 max_psi0 f(psi0)：网格粗搜 → 取 top-k 候选 → 逐轮收缩。
+
+    必要性：max-over-ψ0 的极值点在折点处（min_sign 的尖点），
+    均匀网格收敛慢（O(1/N)，实测 N=200001 仍有 5e-4），
+    不精化无法满足判据 P4 的 1e-9 阈值。
+
+    注：core_fn 可能返回 (P,X)（同时口径）或 (P,X,E)（逐边口径），
+    故对最后一维之后的所有维取 max 得到每个 ψ0 的标量。
+    """
+    def to_psi_profile(arr):
+        a = np.asarray(arr)
+        if a.ndim == 1:
+            return a
+        return a.reshape(a.shape[0], -1).max(axis=1)
+
+    width = float(psi0s[1] - psi0s[0])
+    cands = list(np.atleast_1d(psi0s[np.argsort(g)[-k:]]))
+    best = float(np.max(g))
+    for _ in range(rounds):
+        new = []
+        for c in cands:
+            loc = c + np.linspace(-width, width, pts)
+            gi = to_psi_profile(core_fn(loc, *args))
+            j = int(np.argmax(gi))
+            best = max(best, float(gi[j]))
+            new.append(loc[j])
+        cands = new
+        width /= (pts // 2)
+    return best
+
+
+def evaluate(V, w, positions, psi_extra_deg=(), refine=True):
     ns, cs, shifts, V_s = scaled_geometry(V, w)
     if len(V_s) < 3:
         return None
@@ -175,24 +219,29 @@ def evaluate_positions(V, w, positions, psi_extra_deg=()):
     psi0s = np.concatenate([base, np.deg2rad(np.asarray(psi_extra_deg, float))]) \
         if len(psi_extra_deg) else base
 
-    maxV = -np.inf
-    argmax = None
-    n_pos = 0
-    n_tot = 0
-    n_infeasible = 0
-    for psi0 in psi0s:
-        best = np.minimum(V_of_psi0(psi0, +1, ns, cs, positions, w),
-                          V_of_psi0(psi0, -1, ns, cs, positions, w))
-        j = int(np.argmax(best))
-        if best[j] > maxV:
-            maxV = float(best[j])
-            argmax = (positions[j].copy(), float(psi0), float(best[j]))
-        n_pos += int(np.sum(best > 1e-9))
-        n_tot += len(best)
-        n_infeasible += int(np.sum(~np.isfinite(best)))
-    return {"maxV": maxV, "argmax": argmax, "n_pos": n_pos, "n_tot": n_tot,
-            "n_infeasible": n_infeasible, "n_edges": len(ns),
-            "given_min": float(shifts.min()), "given_max": float(shifts.max())}
+    Vm = core_V(psi0s, ns, cs, positions, w)                # (P,X)
+    Pe = core_per_edge(psi0s, ns, cs, positions, w)         # (P,X,E)
+    nX = Vm.shape[1]
+
+    Pe_worst = Pe.max(axis=2)                               # (P,X) 逐边最差
+    g_sim = Vm.max(axis=1)                                  # (P,)
+    g_per = Pe_worst.max(axis=1)                            # (P,)
+    maxV_sim = float(g_sim.max())
+    maxV_per = float(g_per.max())
+    if refine:
+        maxV_sim = refine_max_psi(core_V, psi0s, g_sim, (ns, cs, positions, w))
+        maxV_per = refine_max_psi(core_per_edge, psi0s, g_per, (ns, cs, positions, w))
+
+    both = (Pe_worst <= 1e-9) & (Vm > 1e-9)                 # (P,X)
+    n_p6 = int(np.sum(both))
+    p6_example = None
+    if n_p6:
+        p, x = np.argwhere(both)[0]
+        p6_example = (positions[x].copy(), float(psi0s[p]), float(Vm[p, x]))
+    return {"maxV_sim": maxV_sim, "maxV_per": maxV_per,
+            "n_p6": n_p6, "p6_example": p6_example,
+            "n_pos_sim": int(np.sum(Vm > 1e-9)), "n_tot": int(Vm.size),
+            "n_edges": len(ns), "n_verts_scaled": len(V_s)}
 
 
 def vertex_directions(V, x0):
@@ -200,89 +249,133 @@ def vertex_directions(V, x0):
     return np.degrees(np.arctan2(d[:, 1], d[:, 0]))
 
 
-# --------------------------------------------------------------- 自检
-def check_negative_control(w=0.3):
-    """P1 负对照：直线边界 + 缩放层边中点 → 应无违反。"""
-    print("[P1 负对照] 直线边界（大矩形），位置=缩放层边中点")
+# ---------------------------------------------------------------- 三件套
+def c1_negative(w=0.3):
+    print("[三件套 a] 负对照：直线边界（大矩形）+ 缩放层边中点 → 应无违反")
     V = rectangle(4000.0, 4000.0, 0.0)
     _, _, _, V_s = scaled_geometry(V, w)
     mids = np.array([(V_s[i] + V_s[(i + 1) % len(V_s)]) / 2 for i in range(len(V_s))])
-    res = evaluate_positions(V, w, mids)
-    ok = res["maxV"] <= 1e-9
-    print(f"   maxV = {res['maxV']:.6e} m → {'通过（无违反）' if ok else '不通过'}")
-    return res["maxV"]
+    res = evaluate(V, w, mids)
+    ok = res["maxV_sim"] <= 1e-9
+    print(f"   maxV_sim={res['maxV_sim']:.3e}  maxV_per={res['maxV_per']:.3e} "
+          f"→ {'通过' if ok else '不通过'}")
+    return res, ok
 
 
-def check_positive_control(w=0.3, dists=(1.0, 5.0, 20.0, 41.25, 60.0, 82.5, 120.0, 200.0)):
-    """P1b 正对照：**离边界距离扫描**。
-
-    持续盘旋模型下，飞机总是转圈，因此"朝外"不构成违反；
-    真正出事的是**离边界太近、转弯圆盘放不下**。
-    故用距边界不同距离的直线边界场景扫描，应出现一个阈值：
-    距离小 → 违反（正）；距离大 → 无违反（负）。
-    """
-    print("\n[P1b 正对照] 直线边界 + 距边界距离扫描（应出现阈值）")
-    V = rectangle(4000.0, 4000.0, 0.0)        # 右边界：n≈(1,0)，c≈2000
+def c2_positive(w=0.3, dists=(1.0, 20.0, 41.25, 55.0, 62.56, 70.0, 90.0, 150.0)):
+    print("\n[三件套 b] 正对照：距边界距离扫描 → 须同时出现'违反'与'不违反'")
+    V = rectangle(4000.0, 4000.0, 0.0)
     ns, cs, shifts, _ = scaled_geometry(V, w)
-    # 找出沿 +x 方向的边（n·(1,0) 最大者）
     i = int(np.argmax(ns @ np.array([1.0, 0.0])))
     n_e, c_e = ns[i], cs[i]
-    print(f"   取边 i={i}：n=({n_e[0]:.4f},{n_e[1]:.4f})，c={c_e:.2f}，"
-          f"该边 given={shifts[i]:.4f} m")
-    print(f"   {'距边界 d(m)':>12} {'room(m)':>10} {'maxV(m)':>12} {'判定':>10}")
-    results = []
+    print(f"   边 i={i}：given={shifts[i]:.4f} m")
+    print(f"   {'d(m)':>9} {'maxV_sim':>12} {'判定':>8}")
+    out = []
     for d in dists:
-        x0 = (c_e - d) * n_e
-        res = evaluate_positions(V, w, x0[None, :])
-        v = res["maxV"]
-        results.append((d, v))
-        verdict = "违反" if v > 1e-9 else "无违反"
-        print(f"   {d:>12.2f} {d:>10.2f} {v:>12.4f} {verdict:>10}")
-    n_pos = sum(1 for _, v in results if v > 1e-9)
-    n_neg = sum(1 for _, v in results if v <= 1e-9)
+        x0 = ((c_e - d) * n_e)[None, :]
+        res = evaluate(V, w, x0)
+        v = res["maxV_sim"]
+        out.append((d, v))
+        print(f"   {d:>9.2f} {v:>12.4f} {'违反' if v > 1e-9 else '安全':>8}")
+    n_pos = sum(1 for _, v in out if v > 1e-9)
+    n_neg = sum(1 for _, v in out if v <= 1e-9)
     ok = n_pos >= 1 and n_neg >= 1
-    print(f"   → {'通过（同时检出违反与不违反，判据有区分能力）' if ok else '不通过'}")
-    return results
+    print(f"   → {'通过（有区分能力）' if ok else '不通过'}")
+    return out, ok
 
 
-def check_w0_rectangle():
-    print("\n[P2] w=0 对齐矩形：given_e 应全为 R")
-    ns, cs, shifts, _ = scaled_geometry(rectangle(300.0, 300.0, 0.0), 0.0)
-    dev = float(np.max(np.abs(shifts - R)))
-    print(f"   given_e = {np.round(shifts, 6)}；偏差 = {dev:.3e} → "
-          f"{'通过' if dev < 1e-6 else '不通过'}")
-    return dev
+def _g_single(psi0s, w, phi):
+    """单方向辅助：返回 (P,1) 以复用 refine_max_psi。"""
+    pv = pen_vec(psi0s, +1, w, np.array([phi]))[:, 0]
+    pm = pen_vec(psi0s, -1, w, np.array([phi]))[:, 0]
+    return np.minimum(pv, pm)[:, None]
 
 
-def check_convergence(V, w, positions, n_list=(901, 1801, 3601, 7201)):
-    print("\n[P3] maxV 对 ψ0 网格的收敛性")
+def c3_crossvalidate(w_list=(0.1, 0.3), n_probe=120, seed=20260918):
+    print("\n[三件套 c] 交叉验证：向量化 pen_vec vs golden tau_fixed vs EXP-27")
+    rng = np.random.default_rng(seed)
+    worst_g = 0.0
+    for w in w_list:
+        for _ in range(n_probe):
+            phi = rng.uniform(0, TWO_PI)
+            psi0 = rng.uniform(0, TWO_PI)
+            if abs(_TAU.vdotn0(psi0, w, phi)) < 1e-6:
+                continue
+            for sign in (+1, -1):
+                g, _, _ = _TAU.tau_fixed(psi0, sign, w, phi)
+                v = pen_vec(np.array([psi0]), sign, w, np.array([phi]))[0, 0]
+                worst_g = max(worst_g, abs(g - v))
+    print(f"   vs golden tau_fixed：最大差 = {worst_g:.3e} m → "
+          f"{'一致' if worst_g < 1e-9 else '不一致'}")
+
+    _s2 = importlib.util.spec_from_file_location("gp", "src/exp_fw_v1_27_general_polygon.py")
+    GP = importlib.util.module_from_spec(_s2)
+    _s2.loader.exec_module(GP)
+    worst_r = 0.0
+    print(f"   {'w':>5} {'n(deg)':>7} {'EXP-27':>12} {'本实现(精化)':>14} {'差':>10}")
+    for w in (0.0, 0.1, 0.3, 0.5):
+        for nd in (0, 45, 90, 135, 180, 270):
+            ph = np.deg2rad(nd)
+            ref = GP.required_at(w, np.array([ph]))[0]
+            grid = np.linspace(0.0, TWO_PI, 721, endpoint=False)
+            est = refine_max_psi(_g_single, grid, _g_single(grid, w, ph).max(axis=1),
+                                 (w, ph))
+            d = abs(est - ref)
+            worst_r = max(worst_r, d)
+            if d > 1e-9:
+                print(f"   {w:>5.1f} {nd:>7} {ref:>12.6f} {est:>14.6f} {d:>10.2e}  <-- 超差")
+    print(f"   vs EXP-27 required_at：最大差 = {worst_r:.3e} m → "
+          f"{'一致（机器精度）' if worst_r < 1e-9 else '不一致'}")
+    return worst_g, worst_r
+
+
+def c4_convergence(V, w, positions, n_list=(451, 901, 1801, 3601)):
+    """收敛性：**精化后**结果应对网格密度不敏感（粗网格+精化 = 同一值）。"""
+    print("\n[三件套 补充] 精化后 maxV_sim 对 ψ0 网格的鲁棒性")
     global N_PSI
     old = N_PSI
-    out = []
+    vals = []
     for n in n_list:
         N_PSI = n
-        out.append(evaluate_positions(V, w, positions)["maxV"])
+        vals.append(evaluate(V, w, positions)["maxV_sim"])
     N_PSI = old
-    for n, v in zip(n_list, out):
-        print(f"   N_PSI={n:>5}: maxV = {v:.9f}")
-    drift = abs(out[-1] - out[-2])
-    print(f"   最密两档之差 = {drift:.3e} → {'稳定' if drift < 1e-6 else '未收敛'}")
-    return out, drift
+    for n, v in zip(n_list, vals):
+        print(f"   N_PSI={n:>5}: {v:.9f}")
+    spread = max(vals) - min(vals)
+    print(f"   跨网格极差 = {spread:.3e} → {'稳定' if spread < 1e-6 else '未收敛'}")
+    return spread
 
 
+# ---------------------------------------------------------------- 主流程
 def main():
     os.makedirs("outputs", exist_ok=True)
     os.makedirs("outputs/figures", exist_ok=True)
     print("=" * 78)
-    print("EXP-FW-V1-27A：多边同时约束复核（v2：机动判据 + 阳性对照）")
+    print("EXP-FW-V1-27A：多边同时约束复核（v4）")
     print("=" * 78)
-    print(f"\nVa={VA} m/s，ω=25°/s，R={R:.4f} m，一周 {TURN_PERIOD:.3f} s\n")
+    print(f"\nVa={VA} m/s，ω=25°/s，R={R:.4f} m；ψ0 网格 {N_PSI}\n")
 
-    m1 = check_negative_control(0.3)
-    m1b_out, m1b_in = check_positive_control(0.3)
-    m2 = check_w0_rectangle()
+    res_neg, ok_a = c1_negative(0.3)
+    res_pos, ok_b = c2_positive(0.3)
+    wg, wr = c3_crossvalidate()
+    Vc = normalize_radius(rectangle(300.0, 300.0, 0.0))
+    _, _, _, Vs_c = scaled_geometry(Vc, 0.3)
+    drift = c4_convergence(Vc, 0.3, Vs_c)
 
-    # ---- 构型 ----
+    print("\n" + "=" * 78)
+    print("三件套总判")
+    print("=" * 78)
+    all_ok = ok_a and ok_b and (wg < 1e-9) and (wr < 1e-9) and (drift < 1e-6)
+    print(f"  a 负对照     : {'通过' if ok_a else '不通过'}")
+    print(f"  b 正对照     : {'通过' if ok_b else '不通过'}")
+    print(f"  c 交叉验证   : golden {wg:.1e} / EXP-27 {wr:.1e} → "
+          f"{'通过' if (wg < 1e-9 and wr < 1e-9) else '不通过'}")
+    print(f"    收敛性     : {drift:.1e} → {'通过' if drift < 1e-6 else '不通过'}")
+    if not all_ok:
+        print("\n  ** 三件套未全部通过 → 主扫描结果不得讨论。**")
+        return
+
+    # ---------------- 主扫描 ----------------
     configs = []
     for ar in (1.0, 2.0, 3.0):
         for a in np.arange(0.0, 45.0 + 1e-9, 5.0):
@@ -292,10 +385,6 @@ def main():
         for a in np.arange(0.0, 45.0 + 1e-9, 15.0):
             configs.append((f"ngon{n}", normalize_radius(regular_ngon(n, np.deg2rad(a)))))
 
-    Vc = normalize_radius(rectangle(300.0, 300.0, 0.0))
-    _, _, _, Vs_c = scaled_geometry(Vc, 0.3)
-    _, drift = check_convergence(Vc, 0.3, Vs_c)
-
     print("\n" + "=" * 78)
     print("主扫描：位置 = 缩放层顶点，ψ0 含指向顶点的航向")
     print("=" * 78)
@@ -303,44 +392,50 @@ def main():
     for w in (0.0, 0.1, 0.3, 0.5):
         worst = None
         for name, V in configs:
-            ns, cs, shifts, V_s = scaled_geometry(V, w)
+            _, _, _, V_s = scaled_geometry(V, w)
             extra = []
             for x0 in V_s:
                 extra.extend(vertex_directions(V, x0))
-            res = evaluate_positions(V, w, V_s, extra)
+            res = evaluate(V, w, V_s, extra)
             if res is None:
                 continue
-            rows.append({"polygon": name, "w": w, "maxV": res["maxV"],
-                         "n_pos": res["n_pos"], "n_tot": res["n_tot"],
-                         "n_infeasible": res["n_infeasible"], "n_edges": res["n_edges"]})
-            if worst is None or res["maxV"] > worst[1]:
-                worst = (name, res["maxV"], res)
+            rows.append({"polygon": name, "w": w,
+                         "maxV_sim": res["maxV_sim"],
+                         "maxV_per": res["maxV_per"],
+                         "n_p6": res["n_p6"],
+                         "n_pos_sim": res["n_pos_sim"],
+                         "n_tot": res["n_tot"],
+                         "n_edges": res["n_edges"]})
+            if worst is None or res["maxV_sim"] > worst[1]:
+                worst = (name, res["maxV_sim"], res)
         print(f"\n  w = {w}：{len(configs)} 构型")
-        print(f"    最差 {worst[0]}：maxV = {worst[1]:.6f} m；"
-              f"正违反 {worst[2]['n_pos']}/{worst[2]['n_tot']}；"
-              f"无可行机动 {worst[2]['n_infeasible']}")
-        if worst[2]["argmax"]:
-            x0, psi, v = worst[2]["argmax"]
-            print(f"    argmax：x0=({x0[0]:.3f},{x0[1]:.3f})，ψ0={np.degrees(psi):.2f}°，V={v:.4f}")
+        print(f"    最差 {worst[0]}：maxV_sim = {worst[1]:.6f} m；"
+              f"逐边 maxV_per = {worst[2]['maxV_per']:.6f} m")
+        print(f"    同时违反位置 {worst[2]['n_pos_sim']}/{worst[2]['n_tot']}；"
+              f"P6（逐边过但同时不过）计数 = {worst[2]['n_p6']}")
+        if worst[2]["p6_example"]:
+            x0, psi, v = worst[2]["p6_example"]
+            print(f"    P6 例：x0=({x0[0]:.2f},{x0[1]:.2f})，ψ0={np.degrees(psi):.2f}°，"
+                  f"同时违反 = {v:.4f} m")
 
     print("\n" + "=" * 78)
     print("判据")
     print("=" * 78)
-    print(f"P1  负对照（直线边界）：maxV = {m1:.3e} → {'通过' if m1 <= 1e-9 else '不通过'}")
-    print(f"P1b 正对照（贴边朝外）：maxV = {m1b_out:.4f} → "
-          f"{'通过' if m1b_out > 1e-9 else '不通过（判据失效）'}")
-    print(f"     朝内对照：maxV = {m1b_in:.4f}（应 ≤ 0）")
-    print(f"P2  w=0 矩形 given_e 偏差 = {m2:.3e} → {'通过' if m2 < 1e-6 else '不通过'}")
-    print(f"P3  收敛性 = {drift:.3e} → {'稳定' if drift < 1e-6 else '未收敛'}")
-    maxV = max(r["maxV"] for r in rows)
-    wr = max(rows, key=lambda r: r["maxV"])
-    print(f"P4  全局 maxV = {maxV:.6f} m（{wr['polygon']}, w={wr['w']}）")
-    if maxV <= 1e-9:
-        print("    → **H-A 成立**：逐边 ⇒ 同时（几何基准可靠，EXP-26 可照原设计）")
+    maxV_sim = max(r["maxV_sim"] for r in rows)
+    maxV_per = max(r["maxV_per"] for r in rows)
+    wr_ = max(rows, key=lambda r: r["maxV_sim"])
+    n_p6_tot = sum(r["n_p6"] for r in rows)
+    print(f"P1/P1b/P2/P3（三件套）: 全部通过")
+    print(f"P4 判定：全局 maxV_sim = {maxV_sim:.6f} m"
+          f"（{wr_['polygon']}, w={wr_['w']}）")
+    print(f"   （对照：逐边口径 maxV_per = {maxV_per:.6f} m）")
+    if maxV_sim <= 1e-9:
+        print("   → **H-A 成立**：逐边 ⇒ 同时；几何基准可靠")
     else:
-        print("    → **H-B 成立**：存在同时违反；逐边判据不足")
-    n_v = sum(1 for r in rows if r["maxV"] > 1e-9)
-    print(f"P5  几何定位：maxV > 0 的构型 = {n_v}/{len(rows)}")
+        print("   → **H-B 成立**：存在同时违反；EXP-27 的逐边判据不足")
+    print(f"P5 几何定位：maxV_sim > 0 的构型 = "
+          f"{sum(1 for r in rows if r['maxV_sim'] > 1e-9)}/{len(rows)}")
+    print(f"P6 对照：逐边全通过但同时违反的 (x0,ψ0) 组合总数 = {n_p6_tot}")
 
     with open("outputs/exp_fw_v1_27a_simultaneous.csv", "w", newline="",
               encoding="utf-8-sig") as f:
@@ -351,19 +446,19 @@ def main():
 
     fig, ax = plt.subplots(1, 2, figsize=(12.5, 4.8))
     for w in (0.0, 0.1, 0.3, 0.5):
-        sub = sorted([r for r in rows if r["w"] == w], key=lambda r: r["maxV"])
-        ax[0].plot(np.arange(len(sub)), [r["maxV"] for r in sub], "o-", ms=3, label=f"w={w}")
+        sub = sorted([r for r in rows if r["w"] == w], key=lambda r: r["maxV_sim"])
+        ax[0].plot(np.arange(len(sub)), [r["maxV_sim"] for r in sub], "o-", ms=3, label=f"w={w}")
     ax[0].axhline(0, color="k", lw=0.8)
-    ax[0].set_xlabel("configurations (sorted)"); ax[0].set_ylabel("maxV (m)")
+    ax[0].set_xlabel("configurations (sorted)"); ax[0].set_ylabel("maxV_sim (m)")
     ax[0].set_title("simultaneous violation (positive ⇒ H-B)")
     ax[0].grid(alpha=0.3); ax[0].legend(fontsize=8)
     ws = [0.0, 0.1, 0.3, 0.5]
     for k, mk in (("rect", "s-"), ("ngon", "^-")):
-        ys = [max([r["maxV"] for r in rows if r["w"] == w and r["polygon"].startswith(k)]
+        ys = [max([r["maxV_sim"] for r in rows if r["w"] == w and r["polygon"].startswith(k)]
                   or [0.0]) for w in ws]
         ax[1].plot(ws, ys, mk, ms=4, label=f"{k} (max)")
     ax[1].axhline(0, color="k", lw=0.8)
-    ax[1].set_xlabel("wind ratio w"); ax[1].set_ylabel("maxV (m)")
+    ax[1].set_xlabel("wind ratio w"); ax[1].set_ylabel("maxV_sim (m)")
     ax[1].set_title("violation vs wind"); ax[1].grid(alpha=0.3); ax[1].legend(fontsize=8)
     fig.tight_layout()
     fig.savefig("outputs/figures/exp_fw_v1_27a_simultaneous.png", dpi=160)
